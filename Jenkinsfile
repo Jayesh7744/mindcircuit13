@@ -1,85 +1,79 @@
 pipeline {
     agent any
+
     options {
         skipDefaultCheckout()
     }
-	
-       tools {
+
+    tools {
         maven 'maven3'
     }
 
-    stages {
-      stage('checkout') {
-            steps {
-                echo 'Cloning GIT HUB Repo '
-				git branch: 'main', url: 'https://github.com/Jayesh7744/mindcircuit13.git'
-            }  
-        }
-
-
-		
-		
-		
-	 stage('SonarQube Analysis') {
     environment {
-        SONAR_TOKEN = credentials('sonarqube-token')
-		SONAR_URL   = "http://13.203.195.158:9000"
+        SONAR_URL = "http://13.203.195.158:9000"
     }
-    steps {
-        script {
-            withSonarQubeEnv('SonarQubeServer') {   // Name configured in Jenkins > Configure System
-                sh """
-                    sonar-scanner \
-                      -Dsonar.projectKey=test \
-                      -Dsonar.sources=./src \
-                      -Dsonar.host.url=$SONAR_URL \
-                      -Dsonar.login=$SONAR_TOKEN
-                """
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Cloning GitHub Repo...'
+                git branch: 'main', url: 'https://github.com/Jayesh7744/mindcircuit13.git'
             }
         }
-    }
-}
-		
-		
-		
+
+        stage('SonarQube Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonarqube-token')
+            }
+            steps {
+                script {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh """
+                            sonar-scanner \
+                              -Dsonar.projectKey=test \
+                              -Dsonar.sources=./src \
+                              -Dsonar.host.url=${SONAR_URL} \
+                              -Dsonar.login=${SONAR_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Build Artifact') {
             steps {
-                echo 'Build Artifact'
-				sh 'mvn clean package'
+                echo 'Building Maven Artifact...'
+                sh 'mvn clean package'
             }
         }
-		
-		
-		
-        stage('Docker Image') {
+
+        stage('Docker Image Build') {
             steps {
-                echo 'Docker Image building'
-				sh 'docker build -t jayesh7744/ultimate-cicd:${BUILD_NUMBER} .'
+                echo 'Building Docker Image...'
+                sh "docker build -t jayesh7744/ultimate-cicd:${BUILD_NUMBER} ."
             }
         }
-		
-		
-       stage('Push to Dockerhub') {
+
+        stage('Push to DockerHub') {
             steps {
-			 script {
-			withCredentials([string(credentialsId: 'dockerhub', variable: 'dockerhub')]) 
-			{
-            sh 'docker login -u jayesh7744 -p ${dockerhub}'
-			
-			 }
-			   sh 'docker push jayesh7744/batch13:${BUILD_NUMBER}'
-			   
-           
-				}
-				
+                script {
+                    withCredentials([string(credentialsId: 'dockerhub', variable: 'DOCKERHUB_TOKEN')]) {
+                        sh """
+                            echo "${DOCKERHUB_TOKEN}" | docker login -u "jayesh7744" --password-stdin
+                            docker push jayesh7744/ultimate-cicd:${BUILD_NUMBER}
+                        """
+                    }
+                }
             }
         }
-		
-		
-    
-		
-		
-			
+
     }
 
+    post {
+        always {
+            echo "Cleaning up workspace..."
+            cleanWs()
+        }
+    }
 }
