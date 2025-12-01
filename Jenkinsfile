@@ -1,7 +1,11 @@
 pipeline {
     agent any
 
-
+pipeline {
+    agent any
+    options {
+        skipDefaultCheckout()
+    }
        tools {
         maven 'maven3'
     }
