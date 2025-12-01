@@ -24,24 +24,27 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            environment {
-                SONAR_TOKEN = credentials('sonarqube-token')
-            }
-            steps {
-                script {
-                    withSonarQubeEnv('SonarQubeServer') {
-                         tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                        sh """
-                            sonar-scanner \
-                              -Dsonar.projectKey=test \
-                              -Dsonar.sources=./src \
-                              -Dsonar.host.url=${SONAR_URL} \
-                              -Dsonar.login=${SONAR_TOKEN}
-                        """
-                    }
-                }
+    environment {
+        SONAR_TOKEN = credentials('sonarqube-token')
+    }
+    steps {
+        script {
+            withSonarQubeEnv('SonarQubeServer') {
+                // Get the full path of the SonarQubeScanner installation
+                def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                
+                // Run sonar-scanner using full path
+                sh """
+                    ${scannerHome}/bin/sonar-scanner \
+                      -Dsonar.projectKey=test \
+                      -Dsonar.sources=./src \
+                      -Dsonar.host.url=${SONAR_URL} \
+                      -Dsonar.login=${SONAR_TOKEN}
+                """
             }
         }
+    }
+}
 
         stage('Build Artifact') {
             steps {
