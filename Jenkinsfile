@@ -29,7 +29,7 @@ pipeline {
             }
             steps {
                 script {
-                    withSonarQubeEnv('SonarQubeServer') {
+                    withSonarQubeEnv('SonarQubeScanner') {
                          tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         sh """
                             sonar-scanner \
