@@ -13,6 +13,8 @@ pipeline {
 				git branch: 'main', url: 'https://github.com/Jayesh7744/mindcircuit13.git'
             }  
         }
+
+
 		
 		
 		
