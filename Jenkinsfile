@@ -1,8 +1,5 @@
 pipeline {
     agent any
-
-pipeline {
-    agent any
     options {
         skipDefaultCheckout()
     }
